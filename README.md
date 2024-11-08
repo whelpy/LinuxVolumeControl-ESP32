@@ -9,3 +9,6 @@ It displays title and volume values of one application, turning encoder left and
 Updated volume values are being processed with server python script, and then applied to pulse audio control.
 
 Display backlight turns on for N seconds when new application appears, or active application changes the title, or when you turn or press the encoder.
+
+Example of inital setup (work in progress).
+![IMG_20241108_161059](https://github.com/user-attachments/assets/6c422dad-32bc-4db6-94ec-2231a6160f3f)

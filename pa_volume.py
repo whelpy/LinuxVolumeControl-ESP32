@@ -4,17 +4,16 @@ from sys import	exit
 import subprocess
 import time
 import json
+import serial
 
 print('PulseAudio inputs watcher started.')
 
-counter	= 0
 sinks = {}
 currentId = 0
 
-while True:
-	
-	print('==> Main loop')
-	
+def getVolumeValues():	
+	global currentId
+	counter	= 0
 	for key in sinks:
 		item = sinks[key]
 		item["EXP"] = 1
@@ -36,21 +35,12 @@ while True:
 				item["ID"] = number
 				sinks[number] = item
 				item["EXP"] = 0
+				if (currentId == 0):
+					currentId = number
 				
-		if (currentId == 0):
-			currentId = number
-
 		if	(line.startswith('\tVolume: ')):
 			vol =	line.replace('\tVolume: ', '').split('/')
-			if (len(vol) < 4):
-				item["VOL_M"] = int(vol[1].replace('%','').replace(' ',''))
-				item["VOL_L"] = 0
-				item["VOL_R"] = 0
-			else:
-				item["VOL_M"] = 0
-				item["VOL_L"]	= int(vol[1].replace('%','').replace(' ',''))
-				item["VOL_R"]	= int(vol[3].replace('%','').replace(' ',''))
-				
+			item["VOL"] = int(vol[1].replace('%','').replace(' ',''))
 
 		if	(line.startswith('\t\tmedia.name = ')):
 			title	= line.replace('\t\tmedia.name = ',	'').replace('\"', '')
@@ -69,14 +59,42 @@ while True:
 			
 	for expId in expiredIds:		
 		sinks.pop(expId)
-			
-	# resulting output
-	for	key in	sinks:
-		item = sinks[key]
+		if (currentId == expId):
+			currentId = 0
+	
+
+def getCurrentValue():
+	if (currentId in sinks):
+		item = sinks[currentId]
 		jsonText = json.dumps(item)
 		print(jsonText)
+		ser.write(str.encode(jsonText))
+		ser.write(b'\n')
+	else:
+		print(b'{"ID": 0 }')
+		ser.write(b'{"ID": 0 }')
+		ser.write(b'\n')
+	
+	
+ser = serial.Serial('/dev/ttyUSB1', 9600, timeout=1)  # open serial port
+
+while True:
+	print(ser.name)         # check which port was really used
+	s = ser.readline()
+	print(s)
+	
+	print('==> Main loop')
+	getVolumeValues()
+			
+	# resulting output
+	#for	key in	sinks:
+	#	if (currentId == 0):
+	#		currentId = key
+	#	item = sinks[key]
+	#	jsonText = json.dumps(item)
+	#print(currentId)
 		
-	print(f'CurrentId: {currentId}')
+	getCurrentValue()
 	
 
 	time.sleep(1)
